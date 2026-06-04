@@ -1,28 +1,20 @@
-echo 'sshd_enable="YES"' >>/etc/rc.conf
-
-service sshd start
-
-
-echo '' >>  /etc/ssh/sshd_config
-
-echo 'PermitRootLogin yes' >>  /etc/ssh/sshd_config
-
-echo 'PermitEmptyPasswords yes' >> /etc/ssh/sshd_config
-
-echo 'PasswordAuthentication yes'  >> /etc/ssh/sshd_config
-
-echo 'AcceptEnv   *'  >> /etc/ssh/sshd_config
+# This runs on the installed VM as root, fed over the live sshpass connection
+# (VM_USE_SSHROOT_BUILD_SSH). build.sh appends the builder's public key to
+# ~/.ssh/authorized_keys right after this content, over the SAME connection.
+#
+# Therefore: do NOT restart sshd here. conf/pcinstall.cfg already enabled sshd and
+# set PermitRootLogin/PasswordAuthentication/AcceptEnv at install time, and sshd
+# is already running and re-reads authorized_keys per connection -- a restart only
+# drops this connection before the key is appended (which made the post-install
+# key-based ssh fail with "Too many authentication failures").
+#
+# All we need is a ~/.ssh to hold the key, plus the VM's own key pair that build.sh
+# later reads back ("cat ~/.ssh/id_rsa.pub").
 
 mkdir -p ~/.ssh
 chmod 700 ~/.ssh
 
 rm -f ~/.ssh/id_rsa
-
 ssh-keygen -t rsa -f ~/.ssh/id_rsa -q -N ''
-
-
-/etc/rc.d/sshd restart
-
-
 
 echo "enable ssh finished."
