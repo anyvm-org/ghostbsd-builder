@@ -43,4 +43,30 @@ if [ -f "$_ld" ] && ! grep -qE '^[[:space:]]*autologin-user=anyvm' "$_ld"; then
   ' "$_ld" > "$_ld.tmp" && mv "$_ld.tmp" "$_ld"
 fi
 
-echo "finalize: desktop enabled (lightdm + autologin=anyvm, spiceqxl removed)."
+# 4) Let the resolution be driven by the anyvm runtime instead of hardcoding it.
+#    anyvm.py runs GhostBSD on a virtio VGA and sets the framebuffer size via
+#    "-global virtio-vga.xres/yres". FreeBSD has no DRM driver for that device, so
+#    Xorg uses the vesa driver -- but vesa's narrow default sync ranges reject the
+#    runtime-set mode ("hsync out of range") and drop to a smaller built-in mode
+#    (e.g. a 1280x800 framebuffer falls back to 1280x720). Widening the monitor
+#    sync ranges (and NOT forcing any Modes) lets vesa actually use whatever
+#    resolution the anyvm runtime requested, so resolution stays an anyvm.py
+#    concern. No "Driver" line, so this is safe on whatever video device is used.
+mkdir -p /usr/local/etc/X11/xorg.conf.d
+cat > /usr/local/etc/X11/xorg.conf.d/20-resolution.conf <<'XORGEOF'
+Section "Monitor"
+    Identifier "Monitor0"
+    HorizSync 1.0 - 1000.0
+    VertRefresh 1.0 - 1000.0
+EndSection
+Section "Device"
+    Identifier "Card0"
+EndSection
+Section "Screen"
+    Identifier "Screen0"
+    Device "Card0"
+    Monitor "Monitor0"
+EndSection
+XORGEOF
+
+echo "finalize: desktop enabled (lightdm + autologin=anyvm, spiceqxl removed; resolution left to anyvm.py)."
