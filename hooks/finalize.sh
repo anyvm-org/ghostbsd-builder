@@ -43,15 +43,14 @@ if [ -f "$_ld" ] && ! grep -qE '^[[:space:]]*autologin-user=anyvm' "$_ld"; then
   ' "$_ld" > "$_ld.tmp" && mv "$_ld.tmp" "$_ld"
 fi
 
-# 4) Let the resolution be driven by the anyvm runtime instead of hardcoding it.
-#    anyvm.py runs GhostBSD on a virtio VGA and sets the framebuffer size via
-#    "-global virtio-vga.xres/yres". FreeBSD has no DRM driver for that device, so
-#    Xorg uses the vesa driver -- but vesa's narrow default sync ranges reject the
-#    runtime-set mode ("hsync out of range") and drop to a smaller built-in mode
-#    (e.g. a 1280x800 framebuffer falls back to 1280x720). Widening the monitor
-#    sync ranges (and NOT forcing any Modes) lets vesa actually use whatever
-#    resolution the anyvm runtime requested, so resolution stays an anyvm.py
-#    concern. No "Driver" line, so this is safe on whatever video device is used.
+# 4) Pin a sane desktop resolution. FreeBSD has no DRM driver for the virtio/qxl
+#    VGA the anyvm runtime gives the guest, so Xorg uses the vesa driver, whose
+#    mode choice can't be steered by qemu's xres/yres: with vesa's narrow default
+#    sync ranges it drops to 1280x720, and with wide ranges it jumps to the
+#    largest VBE mode (1920x1080). So we pin the mode here. 1280x800 matches the
+#    anyvm runtime's default framebuffer (16:10, no letterboxing). Change the
+#    Modes line below to pick a different resolution. No "Driver" line, so this is
+#    safe whatever video device the image is run on.
 mkdir -p /usr/local/etc/X11/xorg.conf.d
 cat > /usr/local/etc/X11/xorg.conf.d/20-resolution.conf <<'XORGEOF'
 Section "Monitor"
@@ -66,7 +65,12 @@ Section "Screen"
     Identifier "Screen0"
     Device "Card0"
     Monitor "Monitor0"
+    DefaultDepth 24
+    SubSection "Display"
+        Depth 24
+        Modes "1280x800" "1280x720" "1024x768"
+    EndSubSection
 EndSection
 XORGEOF
 
-echo "finalize: desktop enabled (lightdm + autologin=anyvm, spiceqxl removed; resolution left to anyvm.py)."
+echo "finalize: desktop enabled (lightdm + autologin=anyvm, spiceqxl removed, 1280x800)."
