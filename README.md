@@ -1,7 +1,6 @@
 
 
 [![Build](https://github.com/anyvm-org/ghostbsd-builder/actions/workflows/build.yml/badge.svg)](https://github.com/anyvm-org/ghostbsd-builder/actions/workflows/build.yml)
-[![Release](https://img.shields.io/github/v/release/anyvm-org/ghostbsd-builder?include_prereleases&sort=semver)](https://github.com/anyvm-org/ghostbsd-builder/releases)
 
 Latest: v2.0.4
 
