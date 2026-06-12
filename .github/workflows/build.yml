@@ -92,3 +92,19 @@ jobs:
           ghostbsd-${{ matrix.os }}.qemu
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
