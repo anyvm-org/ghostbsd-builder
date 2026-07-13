@@ -42,6 +42,14 @@ autoboot_delay="0"
 loader_logo="NO"
 loader_menu_title="NO"
 zfs_load="YES"
+
+# Do not attach the Hyper-V VMBus driver. Under QEMU+WHPX (Windows hosts)
+# the guest sees Hyper-V CPUID ("Microsoft Hv"), attaches vmbus0, and stalls
+# ~110s in the root-mount hold negotiating with a VMBus provider QEMU never
+# supplies (validated on FreeBSD 15.1: boot 130s -> 18s). GhostBSD is
+# FreeBSD under the hood; anyvm always runs this image under QEMU with
+# virtio devices, never under real Hyper-V, so no loss.
+hint.vmbus.0.disabled="1"
 EOF
 
 sysrc rc_parallel="YES"
