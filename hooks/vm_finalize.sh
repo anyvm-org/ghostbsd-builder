@@ -74,3 +74,28 @@ EndSection
 XORGEOF
 
 echo "finalize: desktop enabled (lightdm + autologin=anyvm, spiceqxl removed, 1280x800)."
+
+# --- Image-slimming cleanup (same medicine as freebsd-builder) ---
+# GhostBSD installs onto a single OpenZFS root pool (conf/pcinstall.cfg,
+# installMedium=livezfs) and the build churns packages heavily (postBuild
+# mirror fixup + pkg installs on a desktop image). Freed ZFS blocks are
+# neither zeroed nor trimmed, so they stay allocated in the qcow2 and the
+# export-time `qemu-img convert -S 4k` sparsify cannot reclaim them.
+# Zero-filling is no fix on ZFS (lz4 collapses the zeros); TRIM is: QEMU
+# runs the build disk with discard=unmap, so trimmed blocks become holes.
+
+echo "=== finalize: image cleanup ==="
+
+# Drop fetched package archives (/var/cache/pkg).
+pkg clean -ay || true
+
+# TRIM all free space; -w waits for completion before the build shuts the
+# VM down (OpenZFS 2.x on GhostBSD/FreeBSD 14 has -w).
+for _pool in $(zpool list -H -o name 2>/dev/null); do
+    echo "Trimming pool ${_pool}..."
+    zpool trim -w "${_pool}" || echo "zpool trim ${_pool} failed (non-fatal)"
+    zpool status -t "${_pool}" || true
+done
+
+df -h || true
+echo "=== finalize: image cleanup done ==="
