@@ -1,0 +1,32 @@
+{
+  "os": "ghostbsd",
+  "releases": [
+    {
+      "tag": "26.1",
+      "release": "26.1",
+      "arch": "x86_64",
+      "sync": "rsync,scp,sshfs,nfs",
+      "shutdown": "/sbin/shutdown -p now",
+      "desktop": false,
+      "build": true
+    },
+    {
+      "tag": "26.1-gershwin",
+      "release": "26.1-gershwin",
+      "arch": "x86_64",
+      "sync": "rsync,scp,sshfs,nfs",
+      "shutdown": "/sbin/shutdown -p now",
+      "desktop": true,
+      "build": true
+    },
+    {
+      "tag": "26.1-xfce",
+      "release": "26.1-xfce",
+      "arch": "x86_64",
+      "sync": "rsync,scp,sshfs,nfs",
+      "shutdown": "/sbin/shutdown -p now",
+      "desktop": true,
+      "build": true
+    }
+  ]
+}

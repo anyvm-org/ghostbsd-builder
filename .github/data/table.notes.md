@@ -1,9 +1,3 @@
-
-
-| Release | x86_64 |
-|---------|---------|
-| 26.1 | ✅ (rsync,scp,sshfs,nfs) |
-
 <!-- desktop-table: 26.1-xfce -->
 <!-- desktop-table: 26.1-gershwin -->
 <!-- desktop-header: GhostBSD desktop variant images (x86_64): -->
