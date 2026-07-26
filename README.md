@@ -12,10 +12,13 @@ All the supported releases are here:
 
 
 
-| Release         | x86_64 |
-|-----------------|--------|
-| 26.1            |  ✅ (rsync,scp,sshfs,nfs)    |
+| Release | x86_64 |
+|---------|---------|
+| 26.1 | ✅ (rsync,scp,sshfs,nfs) |
 
+<!-- desktop-table: 26.1-xfce -->
+<!-- desktop-table: 26.1-gershwin -->
+<!-- desktop-header: GhostBSD desktop variant images (x86_64): -->
 GhostBSD is published as amd64 (x86_64) only. The release above is the official
 MATE image (`26.1`).
 
@@ -23,10 +26,10 @@ MATE image (`26.1`).
 
 GhostBSD desktop variant images (x86_64):
 
-| Release         | x86_64 |
-|-----------------|--------|
-| 26.1-xfce       |  ✅    |
-| 26.1-gershwin   |  ✅    |
+| Release | x86_64 |
+|---------|---------|
+| 26.1-xfce | ✅ |
+| 26.1-gershwin | ✅ |
 
 These are the community XFCE image (`26.1-xfce`) and the community GNUstep
 "Gershwin" preview (`26.1-gershwin`). The default `26.1` image (MATE) is listed
