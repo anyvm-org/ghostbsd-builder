@@ -14,7 +14,7 @@ All the supported releases are here:
 
 | Release | x86_64 |
 |---------|---------|
-| 26.1 | ✅ (rsync,scp,sshfs,nfs) |
+| 26.1 | ✅ (rsync,scp,sshfs,nfs,tar) |
 
 <!-- desktop-table: 26.1-xfce -->
 <!-- desktop-table: 26.1-gershwin -->
