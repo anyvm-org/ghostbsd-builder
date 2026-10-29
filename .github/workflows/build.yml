@@ -53,7 +53,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["26.1", "26.1-gershwin", "26.1-xfce"]
+        os: ["26.1", "26.1-gershwin", "26.1-xfce", "26.2", "26.2-xfce"]
     runs-on: ubuntu-26.04
     steps:
 #    - name: Free Disk Space (Ubuntu)
