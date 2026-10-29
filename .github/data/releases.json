@@ -27,6 +27,24 @@
       "shutdown": "/sbin/shutdown -p now",
       "desktop": true,
       "build": true
+    },
+    {
+      "tag": "26.2",
+      "release": "26.2",
+      "arch": "x86_64",
+      "sync": "rsync,scp,sshfs,nfs,tar",
+      "shutdown": "/sbin/shutdown -p now",
+      "desktop": false,
+      "build": true
+    },
+    {
+      "tag": "26.2-xfce",
+      "release": "26.2-xfce",
+      "arch": "x86_64",
+      "sync": "rsync,scp,sshfs,nfs,tar",
+      "shutdown": "/sbin/shutdown -p now",
+      "desktop": true,
+      "build": true
     }
   ]
 }
