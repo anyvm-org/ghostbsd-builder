@@ -21,21 +21,119 @@
 # network probe is gone.
 _cfg_url = "http://192.168.122.1:8000/conf/pcinstall.cfg"
 
-############################################################################
-# 1) Reach a text-console login prompt.
-#
-#    The GhostBSD live ISO copies itself into a swap-backed memdisk and
-#    REROOTS before the login getty appears. On a slow/contended host that
-#    copy can take the better part of an hour, so a single early Ctrl+Alt+F2
-#    is lost across the reroot. Re-issue Ctrl+Alt+F2 on every poll via the
-#    waitForText hook so the switch to ttyv1 is re-asserted until the getty
-#    prompt actually appears -- regardless of how long the boot takes.
-#    OCR renders the live media's "login:" consistently as "logi".
-############################################################################
-log("Waiting for the GhostBSD live system to boot and reach a login prompt...")
-time.sleep(60)
-vncKey("ctrl-alt-f2")
-waitForText("logi", "400", hook=lambda: vncKey("ctrl-alt-f2"))
+def _must_see(text, sec, what):
+    # Every wait on the single-user path is bounded AND fatal: typing the next
+    # command into a screen that never reached the expected state only moves
+    # the failure somewhere unrelated.
+    if waitForText(text, sec) != 0:
+        log("FATAL: ghostbsd installOpts: %s (no '%s' within %s s)"
+            % (what, text, sec))
+        sys.exit(1)
+
+
+if env("VM_LIVE_SINGLE_USER"):
+    ########################################################################
+    # 1) (26.2+) Reach a text-console login prompt by booting single-user.
+    #
+    #    From 26.2 the live media's rc starts the new GUI installer itself:
+    #    /usr/local/etc/rc.d/install_station runs `startx -- :0 vt09` as
+    #    root and blocks until install-station exits, so /etc/rc never
+    #    finishes, init never spawns a getty, and the X server refuses VT
+    #    switches -- the Ctrl+Alt+F2 trick of the branch below types into
+    #    the installer window instead. (install_station_enable="YES" lives
+    #    in /etc/rc.conf.d/install_station, which load_rc_config reads AFTER
+    #    rc.conf, so an rc.conf override alone does not win.)
+    #
+    #    The way around it is to edit the live root before it boots:
+    #    a) The loader menu is hidden (loader_menu_hidden=YES) behind a 2 s
+    #       autoboot; any key other than Enter reveals it and cancels the
+    #       countdown. Space is not a menu shortcut, so it is safe to send
+    #       repeatedly until the menu shows. Send it through the QEMU
+    #       monitor -- a vncdotool process per key is too slow to reliably
+    #       land inside a 2 s window. This hook only starts ~3 s after QEMU
+    #       does, which already missed the window once, so own the timing:
+    #       system_reset first and start the keys right after it, retrying
+    #       with a fresh reset if the menu still does not show.
+    #    b) "s" = Boot Single user. The ramdisk's /init.sh then stops BEFORE
+    #       replicating the live system and offers a shell on the ramdisk.
+    #    c) Do the replication init.sh would have done (same commands, same
+    #       memdisk size rule), which leaves the live pool mounted.
+    #    d) Disable install_station, initial_setup and lightdm through
+    #       rc.conf.d files (they win over rc.conf).
+    #    e) Run the ramdisk's /etc/rc, which reroots into the live pool and
+    #       boots it multi-user -- rc now completes and ttyv0 shows a getty.
+    #    The markers are typed with an empty "" inside them so the echoed
+    #    command line itself never matches the marker.
+    ########################################################################
+    _menu_found = False
+    for _menu_try in range(1, 4):
+        log("Revealing the hidden GhostBSD loader menu (attempt %d/3)..."
+            % _menu_try)
+        _menu_stop = threading.Event()
+
+        def _menu_spam():
+            while not _menu_stop.is_set():
+                qmon("sendkey spc", timeout=0.2)
+                time.sleep(0.3)
+
+        # Short timeout: the default 2 s reply wait would itself eat the
+        # autoboot window before the first key goes out.
+        qmon("system_reset", timeout=0.2)
+        _menu_thread = threading.Thread(target=_menu_spam, daemon=True)
+        _menu_thread.start()
+        try:
+            _menu_found = (waitForText("Single", "90") == 0)
+        finally:
+            _menu_stop.set()
+            _menu_thread.join()
+        if _menu_found:
+            break
+    if not _menu_found:
+        log("FATAL: ghostbsd installOpts: loader menu never appeared "
+            "(no 'Single' after 3 resets)")
+        sys.exit(1)
+    qmon("sendkey s")
+    _must_see("pathname", "600", "single-user ramdisk shell never offered")
+    enter()
+    time.sleep(3)
+
+    string("mdconfig -a -t swap -s $(( $(sysctl -n hw.realmem) * 75 / 100 "
+           "/ 1073741824 ))g -u 1 && zpool create -O primarycache=none "
+           "livecd /dev/md1 && zfs set compression=zstd-9 livecd && "
+           "dd if=/cdrom/data/system.img bs=1M | zfs recv -F livecd && "
+           "echo REPLI\"\"CATED")
+    enter()
+    _must_see("REPLICATED", "1800", "live system replication failed")
+
+    string("R=\"$(zfs get -H -o value mountpoint livecd)\"; "
+           "mkdir -p \"$R/etc/rc.conf.d\" && "
+           "for s in install_station initial_setup lightdm; do "
+           "echo \"${s}_enable=NO\" > \"$R/etc/rc.conf.d/$s\"; done && "
+           "echo PAT\"\"CHED")
+    enter()
+    _must_see("PATCHED", "120", "could not disable the live GUI installer")
+
+    string("/rescue/sh /etc/rc")
+    enter()
+    log("Rerooting into the live system; waiting for the ttyv0 login prompt...")
+    _must_see("logi", "900", "live system never reached a login prompt")
+else:
+    ########################################################################
+    # 1) Reach a text-console login prompt.
+    #
+    #    The GhostBSD live ISO copies itself into a swap-backed memdisk and
+    #    REROOTS before the login getty appears. On a slow/contended host
+    #    that copy can take the better part of an hour, so a single early
+    #    Ctrl+Alt+F2 is lost across the reroot. Re-issue Ctrl+Alt+F2 on
+    #    every poll via the waitForText hook so the switch to ttyv1 is
+    #    re-asserted until the getty prompt actually appears -- regardless
+    #    of how long the boot takes. OCR renders the live media's "login:"
+    #    consistently as "logi".
+    ########################################################################
+    log("Waiting for the GhostBSD live system to boot and reach a login prompt...")
+    time.sleep(60)
+    vncKey("ctrl-alt-f2")
+    waitForText("logi", "400", hook=lambda: vncKey("ctrl-alt-f2"))
 
 ############################################################################
 # 2) Log in. On the GhostBSD live media root logs in on the console with no
