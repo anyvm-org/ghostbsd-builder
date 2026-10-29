@@ -14,13 +14,15 @@ All the supported releases are here:
 
 | Release | x86_64 |
 |---------|---------|
+| 26.2 | ✅ (rsync,scp,sshfs,nfs,tar) |
 | 26.1 | ✅ (rsync,scp,sshfs,nfs,tar) |
 
 <!-- desktop-table: 26.1-xfce -->
 <!-- desktop-table: 26.1-gershwin -->
+<!-- desktop-table: 26.2-xfce -->
 <!-- desktop-header: GhostBSD desktop variant images (x86_64): -->
-GhostBSD is published as amd64 (x86_64) only. The release above is the official
-MATE image (`26.1`).
+GhostBSD is published as amd64 (x86_64) only. The releases above are the official
+MATE images (`26.1`, `26.2`).
 
 How the images are built:
 
@@ -42,11 +44,13 @@ GhostBSD desktop variant images (x86_64):
 
 | Release | x86_64 |
 |---------|---------|
+| 26.2-xfce | ✅ |
 | 26.1-xfce | ✅ |
 | 26.1-gershwin | ✅ |
 
-These are the community XFCE image (`26.1-xfce`) and the community GNUstep
-"Gershwin" preview (`26.1-gershwin`). The default `26.1` image (MATE) is listed
+These are the community XFCE images (`26.1-xfce`, `26.2-xfce`) and the
+community GNUstep "Gershwin" preview (`26.1-gershwin`; upstream ships no
+Gershwin ISO for 26.2). The default MATE images (`26.1`, `26.2`) are listed
 in the main table.
 
 
@@ -62,6 +66,6 @@ How to build:
 
     Just clone the repo. and run:
     ```bash
-    python3 build.py conf/ghostbsd-26.1.conf
+    python3 build.py conf/ghostbsd-26.2.conf
     ```
    
