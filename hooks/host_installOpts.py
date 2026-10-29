@@ -59,7 +59,12 @@ if env("VM_LIVE_SINGLE_USER"):
     #    c) Do the replication init.sh would have done (same commands, same
     #       memdisk size rule), which leaves the live pool mounted.
     #    d) Disable install_station, initial_setup and lightdm through
-    #       rc.conf.d files (they win over rc.conf).
+    #       rc.conf.d files (they win over rc.conf). The XFCE edition has no
+    #       install_station; instead ttyv0 runs `getty ghostbsd`, which
+    #       autologins the live user whose shell profile runs startx on
+    #       ttyv0 -- so also swap that getty for the plain `getty Pc` (via
+    #       the live root's own sed; /rescue has none), as pcinstall.cfg
+    #       already does for the installed system.
     #    e) Run the ramdisk's /etc/rc, which reroots into the live pool and
     #       boots it multi-user -- rc now completes and ttyv0 shows a getty.
     #    The markers are typed with an empty "" inside them so the echoed
@@ -114,6 +119,8 @@ if env("VM_LIVE_SINGLE_USER"):
            "mkdir -p \"$R/etc/rc.conf.d\" && "
            "for s in install_station initial_setup lightdm; do "
            "echo \"${s}_enable=NO\" > \"$R/etc/rc.conf.d/$s\"; done && "
+           "/rescue/chroot \"$R\" /usr/bin/sed -i '' "
+           "-e 's/getty ghostbsd/getty Pc/' /etc/ttys && "
            "echo PAT\"\"CHED")
     enter()
     _must_see("PATCHE", "120", "could not disable the live GUI installer")
@@ -138,7 +145,11 @@ else:
     log("Waiting for the GhostBSD live system to boot and reach a login prompt...")
     time.sleep(60)
     vncKey("ctrl-alt-f2")
-    waitForText("logi", "400", hook=lambda: vncKey("ctrl-alt-f2"))
+    # 400 s was not enough on a slow runner: the memdisk copy alone ran at
+    # ~6 MB/s and took over 400 s (26.1-gershwin, run 40817106992), so the
+    # commands below were typed before the live system was up. Use the same
+    # 1800 s budget as the single-user path gives its replication.
+    waitForText("logi", "1800", hook=lambda: vncKey("ctrl-alt-f2"))
 
 ############################################################################
 # 2) Log in. On the GhostBSD live media root logs in on the console with no
