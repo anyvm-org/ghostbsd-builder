@@ -93,7 +93,10 @@ if env("VM_LIVE_SINGLE_USER"):
             "(no 'Single' after 3 resets)")
         sys.exit(1)
     qmon("sendkey s")
-    _must_see("pathname", "600", "single-user ramdisk shell never offered")
+    # The prompt is "Enter full pathname of shell or RETURN for /rescue/sh:".
+    # OCR has dropped the last letter of "pathname" in CI, so anchor on the
+    # all-caps RETURN, which only appears on this prompt.
+    _must_see("RETURN", "600", "single-user ramdisk shell never offered")
     enter()
     time.sleep(3)
 
@@ -103,7 +106,9 @@ if env("VM_LIVE_SINGLE_USER"):
            "dd if=/cdrom/data/system.img bs=1M | zfs recv -F livecd && "
            "echo REPLI\"\"CATED")
     enter()
-    _must_see("REPLICATED", "1800", "live system replication failed")
+    # Match a prefix of the marker, not all of it: OCR has already dropped a
+    # trailing letter once (see RETURN above).
+    _must_see("REPLICA", "1800", "live system replication failed")
 
     string("R=\"$(zfs get -H -o value mountpoint livecd)\"; "
            "mkdir -p \"$R/etc/rc.conf.d\" && "
@@ -111,7 +116,7 @@ if env("VM_LIVE_SINGLE_USER"):
            "echo \"${s}_enable=NO\" > \"$R/etc/rc.conf.d/$s\"; done && "
            "echo PAT\"\"CHED")
     enter()
-    _must_see("PATCHED", "120", "could not disable the live GUI installer")
+    _must_see("PATCHE", "120", "could not disable the live GUI installer")
 
     string("/rescue/sh /etc/rc")
     enter()
